@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="sw">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f6f4a">
+  <meta name="description" content="Daftari — gusa mara moja kurekodi mauzo, stoo, madeni na ripoti ya siku.">
+  <title>Daftari la Duka</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <main id="view" aria-live="polite"></main>
+    <nav id="tabs" aria-label="Menyu">
+      <button data-tab="sell"><span class="ico">🛒</span>Uza</button>
+      <button data-tab="stock"><span class="ico">📦</span>Stoo</button>
+      <button data-tab="debts"><span class="ico">📒</span>Madeni</button>
+      <button data-tab="report"><span class="ico">📊</span>Ripoti</button>
+      <button data-tab="settings"><span class="ico">⚙️</span>Mipangilio</button>
+    </nav>
+  </div>
+
+  <div id="sheet-backdrop" hidden></div>
+  <section id="sheet" role="dialog" aria-modal="true" hidden></section>
+  <div id="toast" role="status" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
