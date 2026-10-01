@@ -85,9 +85,12 @@ body.locked #app { padding-bottom: 0; }
 .userbtn { width: 42px; height: 42px; border-radius: 50%; border: 2px solid rgba(255,255,255,.7); background: var(--brand-dark); color: #fff; font-weight: 800; }
 .bchips { display: flex; gap: 6px; overflow-x: auto; padding: 6px 0 4px; min-height: 8px; scrollbar-width: none; }
 .bchips::-webkit-scrollbar { display: none; }
-.bchip { flex: none; display: inline-flex; align-items: center; gap: 6px; background: #fff; color: var(--ink); border-radius: 999px; padding: 4px 4px 4px 12px; font-size: 14px; white-space: nowrap; }
+.bchip { flex: none; display: inline-flex; align-items: center; gap: 6px; background: #fff; color: var(--ink); border-radius: 999px; padding: 4px; font-size: 14px; white-space: nowrap; }
 .bchip b { font-variant-numeric: tabular-nums; }
-.bchip button { width: 30px; height: 30px; border-radius: 50%; border: 0; background: #fde2e0; color: var(--danger); font-weight: 800; }
+.bchip .bqty { font-weight: 800; color: var(--brand); }
+.bchip button { width: 34px; height: 34px; border-radius: 50%; border: 0; font-size: 20px; font-weight: 800; line-height: 1; }
+.bchip .minus { background: #fde2e0; color: var(--danger); }
+.bchip .plus { background: #dff3e5; color: var(--ok); }
 .cats { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
 .cats::-webkit-scrollbar { display: none; }
 .cat { flex: none; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.5); background: transparent; color: #fff; font-weight: 600; font-size: 14px; }
@@ -185,6 +188,7 @@ body.locked #app { padding-bottom: 0; }
 #sheet textarea { font-size: 15px; font-family: ui-monospace, Menlo, monospace; }
 #sheet .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 #sheet .chip { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: #f6f3ec; font-weight: 700; }
+#sheet .chip.on { background: var(--brand); color: #fff; border-color: var(--brand); }
 #sheet .btnrow { display: flex; gap: 10px; margin-top: 16px; }
 #sheet .btnrow .btn { flex: 1; min-height: 52px; }
 #sheet .example { background: #f6f3ec; border-radius: 10px; padding: 10px; font-size: 13px; overflow-x: auto; margin: 8px 0; }

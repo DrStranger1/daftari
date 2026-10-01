@@ -376,7 +376,7 @@ function lock() {
 function saveBasket() { lsSet(BASKET_KEY, basket); }
 function basketEvents() { return basket.ids.map(id => S.events.find(e => e.id === id)).filter(e => e && !e.void); }
 const lineKey = e => e.type === 'other' ? 'other' : `${e.itemId}|${e.label}`;
-const lineName = e => e.type === 'other' ? (e.note || 'Nyingine') : `${e.name} ${e.label}`;
+const lineName = e => e.type === 'other' ? (e.note || 'Nyingine') : e.label === '1' ? e.name : `${e.name} ${e.label}`;
 
 function visibleItems() {
   if (catSel === 'fav') return S.items.filter(i => i.fav);
@@ -439,9 +439,11 @@ function sell(itemId, pIndex, el) {
   save();
   basket.ids.push(e.id); saveBasket();
   buzz();
-  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
-  const lbl = (el.closest('.card') || el).querySelector('.stock');
-  if (lbl) { lbl.textContent = qtyText(it.stock, it.unit); lbl.classList.toggle('low', it.stock <= it.lowAt); }
+  if (el) {
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    const lbl = (el.closest('.card') || el).querySelector('.stock');
+    if (lbl) { lbl.textContent = qtyText(it.stock, it.unit); lbl.classList.toggle('low', it.stock <= it.lowAt); }
+  }
   updateBar();
 }
 
@@ -459,9 +461,26 @@ function updateBar() {
   $('#btotal').textContent = fmt(total);
   $('#blabel').textContent = evs.length ? `Mteja huyu · bidhaa ${evs.length}` : 'Gusa bidhaa kuuza';
   $('#finish').disabled = !evs.length;
-  box.innerHTML = sorted.map(([k, l]) => `<span class="bchip">${esc(l.name)}${l.n > 1 ? ` ×${l.n}` : ''} <b>${fmt(l.amount)}</b>
-    <button data-rm="${esc(k)}" aria-label="Ondoa ${esc(l.name)}">✕</button></span>`).join('');
+  box.innerHTML = sorted.map(([k, l]) => `<span class="bchip">
+    <button class="minus" data-rm="${esc(k)}" aria-label="Punguza ${esc(l.name)}">${l.n > 1 ? '−' : '✕'}</button>
+    <span class="bname">${esc(l.name)}</span><span class="bqty">×${l.n}</span><b>${fmt(l.amount)}</b>
+    <button class="plus" data-add="${esc(k)}" aria-label="Ongeza ${esc(l.name)}">+</button></span>`).join('');
   $$('[data-rm]', box).forEach(b => b.addEventListener('click', () => removeOne(b.dataset.rm)));
+  $$('[data-add]', box).forEach(b => b.addEventListener('click', () => addOne(b.dataset.add)));
+}
+
+/** "+" on a basket line: one more of the same thing. */
+function addOne(key) {
+  const e = [...basketEvents()].reverse().find(x => lineKey(x) === key); if (!e) return;
+  if (e.type === 'other') {
+    const n = log({ type: 'other', amount: e.amount, note: e.note, pay: 'cash' });
+    save(); basket.ids.push(n.id); saveBasket(); buzz(); updateBar(); return;
+  }
+  const it = itemById(e.itemId); if (!it) return;
+  const idx = it.portions.findIndex(p => p.label === e.label);
+  if (idx < 0) { toast('Bei ya bidhaa hii imebadilika — gusa bidhaa kwenye orodha'); return; }
+  sell(it.id, idx, null);
+  render();
 }
 
 /** Customer changed their mind: take one of this line back out of the basket. */
@@ -471,7 +490,8 @@ function removeOne(key) {
   e.void = true; e.voidT = Date.now(); e.voidBy = session.userId; e.voidReason = 'ondoa';
   if (e.type === 'sale') { const it = itemById(e.itemId); if (it) it.stock = r3(it.stock + e.qty); }
   basket.ids = basket.ids.filter(id => id !== e.id); saveBasket(); save();
-  buzz(); toast(`Imeondolewa: ${lineName(e)}`); render();
+  const left = basketEvents().filter(x => lineKey(x) === key).length;
+  buzz(); toast(left ? `${lineName(e)}: sasa ${left}` : `Imeondolewa: ${lineName(e)}`); render();
 }
 
 /* ---- Maliza: change calculator + how the customer paid ---- */
@@ -496,34 +516,45 @@ function openCheckout() {
     const rec = $('#rec', sh), chg = $('#chg', sh);
     const upd = () => {
       const r = +rec.value;
-      chg.innerHTML = !rec.value ? '' : r < T ? `<span style="color:var(--danger)">Pungufu ${fmt(T - r)}</span>` : `Chenji: <b>${fmt(r - T)}</b>`;
+      chg.innerHTML = !rec.value ? '' : r < T ? `<span style="color:var(--danger)">Pungufu ${fmt(T - r)}</span> <span class="small muted">— itaandikwa kama deni</span>` : `Chenji: <b>${fmt(r - T)}</b>`;
     };
     rec.addEventListener('input', upd);
     $$('[data-r]', sh).forEach(b => b.addEventListener('click', () => { rec.value = b.dataset.r; upd(); }));
     $('#cancel', sh).addEventListener('click', closeSheet);
     $$('[data-pay]', sh).forEach(b => b.addEventListener('click', () => {
       const pay = b.dataset.pay, received = +rec.value || null;
+      if (received && received < T) return openPartial(pay === 'mobile' ? 'mobile' : 'cash', received, T);
       if (pay === 'credit') pickCustomer(cid => closeBasket('credit', cid, null), 'Deni la nani?');
       else closeBasket(pay, null, received);
     }));
   });
 }
 
-function closeBasket(pay, cid, received) {
+/** Customer paid only part: alert, then ask whose debt the balance is. */
+function openPartial(method, paid, T) {
+  pickCustomer(cid => closeBasket('credit', cid, null, { paid, method }), `Baki ${fmt(T - paid)} — deni la nani?`,
+    `<div class="result over"><div class="big">Amelipa ${fmt(paid)} kwa ${method === 'mobile' ? 'simu' : 'taslimu'}</div>
+     Jumla ni ${fmt(T)}. Baki <b>${fmt(T - paid)}</b> itaandikwa kama deni la mteja utakayemchagua.</div>`);
+}
+
+function closeBasket(pay, cid, received, part) {
   const evs = basketEvents();
   const total = evs.reduce((s, e) => s + e.amount, 0);
   for (const e of evs) { e.pay = pay; e.credit = pay === 'credit' ? cid : null; }
-  log({ type: 'close', ids: evs.map(e => e.id), total, pay, credit: cid, received, change: received ? received - total : null });
+  if (part) log({ type: 'payment', customerId: cid, name: custById(cid)?.name, amount: part.paid, method: part.method, atCheckout: true });
+  log({ type: 'close', ids: evs.map(e => e.id), total, pay, credit: cid, received, change: received ? received - total : null, paidNow: part?.paid || 0 });
   basket.ids = []; saveBasket(); save(); closeSheet();
-  toast(pay === 'credit' ? `Deni: ${custById(cid)?.name} ${fmt(total)}` : pay === 'mobile' ? `Simu: ${fmt(total)} ✓` : `Taslimu: ${fmt(total)} ✓`);
+  const name = custById(cid)?.name;
+  toast(part ? `${name}: amelipa ${fmt(part.paid)}, deni ${fmt(total - part.paid)}`
+    : pay === 'credit' ? `Deni: ${name} ${fmt(total)}` : pay === 'mobile' ? `Simu: ${fmt(total)} ✓` : `Taslimu: ${fmt(total)} ✓`);
   render();
 }
 
-function pickCustomer(onPick, title) {
+function pickCustomer(onPick, title, intro = '') {
   const list = S.customers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(c =>
     `<button data-c="${c.id}"><span>${esc(c.name)}</span><span class="muted small">${balanceOf(c.id) ? 'Anadaiwa ' + fmt(balanceOf(c.id)) : ''}</span></button>`).join('');
   openSheet(`
-    <h2>${esc(title)}</h2>
+    ${intro}<h2>${esc(title)}</h2>
     <div class="field"><label>Mteja mpya</label>
       <div style="display:flex;gap:8px"><input id="newc" placeholder="Jina (mf. Mama Asha)"><button class="btn primary" id="addc">Ongeza</button></div></div>
     <div class="custpick">${list || '<p class="muted">Bado hakuna wateja wa deni.</p>'}</div>
@@ -718,17 +749,20 @@ function openCustomer(cid) {
     <div class="field"><label>Amelipa (TSh)</label>
       <div style="display:flex;gap:8px"><input id="amt" type="number" inputmode="numeric" min="0" placeholder="${b > 0 ? fmt(b) : ''}">
       <button class="btn primary" id="pay">Amelipa</button></div>
-      ${b > 0 ? `<div class="chips"><button class="chip" id="all">Yote (${fmt(b)})</button></div>` : ''}</div>
+      <div class="chips">${b > 0 ? `<button class="chip" id="all">Yote (${fmt(b)})</button>` : ''}
+        <button class="chip method on" data-m="cash">💵 Taslimu</button><button class="chip method" data-m="mobile">📱 Simu</button></div></div>
     <h2 style="font-size:16px;margin-top:16px">Historia</h2>
-    <div class="list">${hist.map(e => `<div class="row"><div class="grow"><div class="title">${e.type === 'payment' ? 'Malipo' : esc(lineName(e))}</div>
+    <div class="list">${hist.map(e => `<div class="row"><div class="grow"><div class="title">${e.type === 'payment' ? `Malipo${e.method === 'mobile' ? ' (simu)' : ''}${e.atCheckout ? ' wakati wa kununua' : ''}` : esc(lineName(e))}</div>
       <div class="sub">${dayName(dayKey(e.t))} · ${timeOf(e.t)} · ${esc(whoName(e.by))}</div></div>
       <div class="num" style="color:${e.type === 'payment' ? 'var(--ok)' : 'inherit'}">${e.type === 'payment' ? '−' : '+'}${fmt(e.amount)}</div></div>`).join('') || '<div class="empty">Hakuna historia</div>'}</div>
     <div class="btnrow"><button class="btn danger" id="del">Futa mteja</button><button class="btn" id="close">Funga</button></div>`, sh => {
     $('#close', sh).addEventListener('click', closeSheet);
     $('#all', sh)?.addEventListener('click', () => ($('#amt', sh).value = b));
+    let method = 'cash';
+    $$('.method', sh).forEach(m => m.addEventListener('click', () => { method = m.dataset.m; $$('.method', sh).forEach(x => x.classList.toggle('on', x === m)); }));
     $('#pay', sh).addEventListener('click', () => {
       const a = +$('#amt', sh).value; if (!(a > 0)) return;
-      log({ type: 'payment', customerId: cid, name: c.name, amount: a });
+      log({ type: 'payment', customerId: cid, name: c.name, amount: a, method });
       save(); closeSheet(); toast(`${c.name} amelipa ${fmt(a)}`); render();
     });
     $('#del', sh).addEventListener('click', () => requireOwner(() => {
@@ -744,13 +778,19 @@ function reportData(day) {
   const sales = evs.filter(e => (e.type === 'sale' || e.type === 'other') && !e.void);
   const sum = a => a.reduce((s, e) => s + e.amount, 0);
   const total = sum(sales);
-  const credit = sum(sales.filter(isCredit));
-  const mobile = sum(sales.filter(e => e.pay === 'mobile'));
-  const cash = total - credit - mobile;
+  const pays = evs.filter(e => e.type === 'payment' && !e.void);
+  const isMob = e => e.method === 'mobile';
+  const atCheckout = pays.filter(e => e.atCheckout), repaid = pays.filter(e => !e.atCheckout);
+  const coCash = sum(atCheckout.filter(e => !isMob(e))), coMobile = sum(atCheckout.filter(isMob));
+  const creditSales = sum(sales.filter(isCredit)), mobileSales = sum(sales.filter(e => e.pay === 'mobile'));
+  const credit = creditSales - coCash - coMobile;               // only the part still owed
+  const mobile = mobileSales + coMobile;
+  const cash = total - creditSales - mobileSales + coCash;
   const itemSales = sales.filter(e => e.type === 'sale');
   const profit = itemSales.reduce((s, e) => s + e.amount - (e.cost || 0), 0);
   const otherTotal = sum(sales.filter(e => e.type === 'other'));
-  const payments = sum(evs.filter(e => e.type === 'payment' && !e.void));
+  const payments = sum(repaid.filter(e => !isMob(e)));          // old debts paid in cash (goes to drawer)
+  const paymentsMobile = sum(repaid.filter(isMob));
   const voided = S.events.filter(e => e.void && e.voidT && dayKey(e.voidT) === day);
   const byItem = new Map();
   for (const e of itemSales) {
@@ -761,7 +801,7 @@ function reportData(day) {
   const byUser = new Map();
   for (const e of sales) { const r = byUser.get(e.by || '') || { n: 0, amount: 0 }; r.n++; r.amount += e.amount; byUser.set(e.by || '', r); }
   return {
-    day, total, credit, mobile, cash, profit, otherTotal, payments, expected: cash + payments, count: sales.length, sales, voided,
+    day, total, credit, mobile, cash, profit, otherTotal, payments, paymentsMobile, expected: cash + payments, count: sales.length, sales, voided,
     items: [...byItem.values()].sort((a, b) => b.amount - a.amount),
     users: [...byUser].map(([id, r]) => ({ name: whoName(id), ...r })).sort((a, b) => b.amount - a.amount),
     checks: evs.filter(e => e.type === 'finish'), uses: evs.filter(e => e.type === 'use'),
@@ -814,12 +854,13 @@ function renderReport(v) {
     <h2>Pesa inayotarajiwa kwenye droo</h2>
     <div class="list">
       <div class="row"><div class="grow">Mauzo ya taslimu</div><div class="num">${fmt(R.cash)}</div></div>
-      <div class="row"><div class="grow">Madeni yaliyolipwa</div><div class="num">${fmt(R.payments)}</div></div>
+      <div class="row"><div class="grow">Madeni ya zamani yaliyolipwa (taslimu)</div><div class="num">${fmt(R.payments)}</div></div>
       <div class="row"><div class="grow"><b>Inatarajiwa</b></div><div class="num">${fmt(R.expected)}</div></div>
       <div class="row"><div class="grow"><label class="small muted" for="counted">Ukihesabu droo (si lazima)</label>
         <input id="counted" type="number" inputmode="numeric" placeholder="Weka kiasi" class="inline-input"></div>
         <div class="num" id="diff"></div></div>
     </div>
+    ${R.paymentsMobile ? `<p class="small muted">Madeni yaliyolipwa kwa simu: ${fmt(R.paymentsMobile)} (hayako kwenye droo).</p>` : ''}
 
     ${owner ? ownerReport(R) : `<div style="margin-top:16px"><button class="btn block" id="full">🔒 Ripoti kamili (PIN ya mwenye duka)</button></div>`}
 
@@ -887,7 +928,7 @@ function reportText(R, owner) {
   L.push(`Imetumwa na: ${me()?.name || ''}`);
   L.push(`Mauzo: ${tsh(R.total)} (${R.count})`);
   L.push(`Taslimu: ${fmt(R.cash)} · Simu: ${fmt(R.mobile)} · Deni: ${fmt(R.credit)}`);
-  L.push(`Madeni yaliyolipwa: ${fmt(R.payments)}`);
+  L.push(`Madeni ya zamani yaliyolipwa: ${fmt(R.payments + R.paymentsMobile)}${R.paymentsMobile ? ` (simu ${fmt(R.paymentsMobile)})` : ''}`);
   L.push(`Droo inatarajiwa: ${tsh(R.expected)}`);
   if (owner) L.push(`Faida (makadirio): ${tsh(R.profit)}`);
   const removed = R.voided.filter(e => e.voidReason === 'futa').length;
