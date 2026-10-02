@@ -47,6 +47,10 @@ For kg items write `kg` and the price for 1 kg. The ¼, ½ and 1 kg buttons are 
 - **✕ and "Futa" don't erase the record**: removed or cancelled sales stay in the Kumbukumbu with the name of who did it, so the owner can see if many sales are being cancelled.
 - **Drawer** = cash sales + credit payments received. Mobile money (Simu) is counted separately.
 
+## Design
+
+The look ("Tikiti" design: deep green + marigold, basket tray at the bottom with ✓ Maliza at thumb height) came from Claude Design and only changes `styles.css` plus a few presentation-only lines in `index.html`/`app.js`. Details, colour tokens and the list of markup changes: [`docs/design-handoff.md`](docs/design-handoff.md).
+
 ## Technology
 
 - Plain HTML + CSS + JavaScript. **No build step, no server, no dependencies.**

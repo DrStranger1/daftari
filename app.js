@@ -229,11 +229,14 @@ function go(t) {
   if (t === 'settings' && !isOwner()) return requireOwner(() => paint('settings'), 'Kufungua mipangilio');
   paint(t);
 }
+const TAB_ORDER = ['sell', 'stock', 'debts', 'report', 'settings'];
 function paint(t) {
+  const dir = Math.sign(TAB_ORDER.indexOf(t) - TAB_ORDER.indexOf(tab));
   tab = t;
   $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
   render();
   window.scrollTo(0, 0);
+  if (dir) { const v = $('#view'); v.style.setProperty('--dir', dir); v.classList.remove('tabin'); void v.offsetWidth; v.classList.add('tabin'); }
 }
 function render() {
   if (!S.setupDone) return renderSetup();
@@ -262,7 +265,8 @@ function renderSetup() {
   const v = $('#view');
   const migrating = S.items.length && S.events.length;
   v.innerHTML = `<div class="auth">
-    <div class="logo">📒</div><h1>Karibu Daftari</h1>
+    <div class="step" data-step="1">Hatua 1 kati ya 3</div>
+    <div class="logo"><img src="icons/icon.svg" alt=""></div><h1>Karibu Daftari</h1>
     <p class="muted">${migrating ? 'Sasa Daftari lina akaunti. Tengeneza akaunti ya mwenye duka — taarifa zako za zamani zitabaki.' : 'Tuanze kwa kutengeneza akaunti ya mwenye duka.'}</p>
     <div class="form">
       <label>Jina la duka</label><input id="shop" value="${esc(S.shopName)}">
@@ -276,7 +280,7 @@ function renderSetup() {
       const code = newRecoveryCode();
       const u = { id: uid(), name: owner, role: 'owner', pin: await makeSecret(pin) };
       S.shopName = shop; S.users = [u]; S.recovery = await makeSecret(normCode(code));
-      v.innerHTML = `<div class="auth"><div class="logo">🔑</div><h1>Namba ya dharura</h1>
+      v.innerHTML = `<div class="auth"><div class="step" data-step="3">Hatua 3 kati ya 3</div><div class="logo">🔑</div><h1>Namba ya dharura</h1>
         <p>Ukisahau PIN, utaitumia namba hii kuweka PIN mpya. <b>Iandike kwenye karatasi</b> na uitunze mahali salama.</p>
         <div class="code">${code}</div>
         <button class="btn primary block" id="ok">Nimeiandika</button></div>`;
@@ -285,14 +289,14 @@ function renderSetup() {
         log({ type: 'user', action: 'setup', userId: u.id, name: u.name }); save();
         go('sell');
       });
-    });
+    }, undefined, 2);
   });
 }
 
-/** Ask for a new PIN twice. Calls done(pin) when both match. */
-function choosePin(el, title, done, onCancel) {
+/** Ask for a new PIN twice. Calls done(pin) when both match. step (setup only) shows "Hatua X kati ya 3". */
+function choosePin(el, title, done, onCancel, step) {
   const ask = (msg) => {
-    const html = `<div class="auth"><div id="pp"></div>${onCancel ? '<button class="btn" id="pc">Ghairi</button>' : ''}</div>`;
+    const html = `<div class="auth">${step ? `<div class="step" data-step="${step}">Hatua ${step} kati ya 3</div>` : ''}<div id="pp"></div>${onCancel ? '<button class="btn" id="pc">Ghairi</button>' : ''}</div>`;
     el.innerHTML = html;
     $('#pc', el)?.addEventListener('click', onCancel);
     const api1 = pinPad($('#pp', el), {
@@ -315,7 +319,7 @@ function renderLogin(selectedId) {
   const users = S.users;
   const sel = selectedId || (users.length === 1 ? users[0].id : null);
   v.innerHTML = `<div class="auth">
-    <div class="logo">📒</div><h1>${esc(S.shopName)}</h1>
+    <div class="logo"><img src="icons/icon.svg" alt=""></div><h1>${esc(S.shopName)}</h1>
     <p class="muted">${sel ? '' : 'Chagua jina lako'}</p>
     <div class="users">${users.map(u => `<button class="utile ${u.id === sel ? 'on' : ''}" data-u="${u.id}">
       <span class="av">${esc(u.name.slice(0, 1).toUpperCase())}</span><span>${esc(u.name)}</span>
@@ -459,6 +463,7 @@ function updateBar() {
   });
   const sorted = [...lines].sort((a, b) => b[1].last - a[1].last);
   $('#btotal').textContent = fmt(total);
+  const t = $('#btotal'); t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
   $('#blabel').textContent = evs.length ? `Mteja huyu · bidhaa ${evs.length}` : 'Gusa bidhaa kuuza';
   $('#finish').disabled = !evs.length;
   box.innerHTML = sorted.map(([k, l]) => `<span class="bchip">

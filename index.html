@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1f6f4a">
+  <meta name="theme-color" content="#17603f">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#164a32">
   <meta name="description" content="Daftari — gusa mara moja kurekodi mauzo, stoo, madeni na ripoti ya siku.">
   <title>Daftari la Duka</title>
   <link rel="manifest" href="manifest.webmanifest">
@@ -15,11 +16,11 @@
   <div id="app">
     <main id="view" aria-live="polite"></main>
     <nav id="tabs" aria-label="Menyu">
-      <button data-tab="sell"><span class="ico">🛒</span>Uza</button>
-      <button data-tab="stock"><span class="ico">📦</span>Stoo</button>
-      <button data-tab="debts"><span class="ico">📒</span>Madeni</button>
-      <button data-tab="report"><span class="ico">📊</span>Ripoti</button>
-      <button data-tab="settings"><span class="ico">⚙️</span>Mipangilio</button>
+      <button data-tab="sell"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg></span>Uza</button>
+      <button data-tab="stock"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.7 4.73a2 2 0 0 0 2 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></svg></span>Stoo</button>
+      <button data-tab="debts"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20"/></svg></span>Madeni</button>
+      <button data-tab="report"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>Ripoti</button>
+      <button data-tab="settings"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></svg></span>Mipangilio</button>
     </nav>
   </div>
 

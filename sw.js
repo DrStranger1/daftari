@@ -2,7 +2,7 @@
  * Strategy: try the network first (so updates show up straight away),
  * fall back to the saved copy when offline or the network is too slow.
  * Bump VERSION whenever you change app files. */
-const VERSION = 'daftari-v4';
+const VERSION = 'daftari-v5';
 const FILES = ['./', 'index.html', 'app.js', 'styles.css', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 const NETWORK_TIMEOUT_MS = 3000;
 
