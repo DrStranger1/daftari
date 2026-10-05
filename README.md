@@ -47,6 +47,16 @@ For kg items write `kg` and the price for 1 kg. The ¼, ½ and 1 kg buttons are 
 - **✕ and "Futa" don't erase the record**: removed or cancelled sales stay in the Kumbukumbu with the name of who did it, so the owner can see if many sales are being cancelled.
 - **Drawer** = cash sales + credit payments received. Mobile money (Simu) is counted separately.
 
+## New in version 3 (tyre-shop feedback)
+
+- **Product types:** Kipande (piece, e.g. tyres), Kilo, Lita, Mita, and **Huduma** (a service such as puncture repair: records money, no stock).
+- **Own groups (Kundi):** choose "➕ Kundi jipya…" in the item editor, or write it as the last word in bulk add (e.g. `Tairi`).
+- **Futa bidhaa zote:** one button (owner PIN) removes all products, e.g. the food samples in a non-food shop. Sales history is kept.
+- **Buying price per delivery:** `+ Mzigo` asks the price of *this* delivery (per piece or total); the item's buying price becomes the average of old and new stock, so profit stays correct.
+- **Punguzo (discount) at Maliza:** amount, 5% or 10%; change, part payment and deni use the total after discount. Helpers need the owner's PIN. Shown in the report and the activity log.
+- **Owner PIN to manage users:** adding a helper, changing a PIN, removing a user, a new recovery code and erasing data always ask for the owner's PIN again.
+- **Keyboard:** arrow keys move between buttons, Enter chooses, Esc closes a sheet, number keys type a PIN.
+
 ## Design
 
 The look ("Tikiti" design: deep green + marigold, basket tray at the bottom with ✓ Maliza at thumb height) came from Claude Design and only changes `styles.css` plus a few presentation-only lines in `index.html`/`app.js`. Details, colour tokens and the list of markup changes: [`docs/design-handoff.md`](docs/design-handoff.md).
